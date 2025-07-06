@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
+
 df = pd.read_csv('/content/spam.csv', encoding='ISO-8859-1')
+
+#Data preprocessing
 df.info()
 # drop extra columns
 df.drop(columns=['Unnamed: 2',	'Unnamed: 3',	'Unnamed: 4'],inplace=True)
@@ -17,3 +20,35 @@ df.duplicated().sum()
 # if yes
 df.drop_duplicates(keep='first',inplace=True)
 df.duplicated().sum()
+
+#EDA
+df['target'].value_counts()
+#pie chart
+import matplotlib.pyplot as plt
+plt.pie(df['target'].value_counts(),labels=['ham','spam'],autopct="0.2f")
+plt.show()
+import nltk
+nltk.download('punkt')
+# no of characters in string
+df['num_characters']=df['text'].apply(len)
+# no of words in string
+from nltk.tokenize import wordpunct_tokenize
+df['text'] = df['text'].apply(lambda x: wordpunct_tokenize(x))
+# no of sentences ina a string
+import re
+def simple_sent_tokenize(text):
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    return sentences
+
+df['num_sentences'] = df['text'].apply(lambda x: len(simple_sent_tokenize(x)))
+# describe
+df[['num_characters','num_words','num_sentences']].describe()
+df[df['target']==0][['num_characters','num_words','num_sentences']].describe()
+df[df['target']==1][['num_characters','num_words','num_sentences']].describe()
+# histogram
+import seaborn as sns
+sns.histplot(df[df['target']==0]['num_characters'],color='pink')
+sns.histplot(df[df['target']==1]['num_characters'])
+#relation btw columns
+sns.pairplot(df,hue='target')
