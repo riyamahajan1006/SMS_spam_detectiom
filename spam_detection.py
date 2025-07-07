@@ -128,3 +128,24 @@ plt.figure(figsize=(4,4))
 plt.imshow(wc, interpolation='bilinear')
 plt.axis('off')
 plt.show()
+
+
+# ----------------------------------------- Top words --------------------------------------------
+
+spam_corpus = []
+for msg in df[df['target']==1]['transformed_text']:
+    spam_corpus.extend(msg)
+import seaborn as sns
+from collections import Counter
+sns.barplot(x=pd.DataFrame(Counter(spam_corpus).most_common(30))[0],y=pd.DataFrame(Counter(spam_corpus).most_common(30))[1])
+plt.xticks(rotation='vertical')
+plt.show()
+
+ham_corpus = []
+for msg in df[df['target']==0]['transformed_text']:
+    ham_corpus.extend(msg)
+import seaborn as sns
+from collections import Counter
+sns.barplot(x=pd.DataFrame(Counter(ham_corpus).most_common(30))[0],y=pd.DataFrame(Counter(ham_corpus).most_common(30))[1])
+plt.xticks(rotation='vertical')
+plt.show()
