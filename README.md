@@ -1,1 +1,1 @@
-# SMS_spam_detectiom
+This is a simple Machine Learning project that classifies text data (like spam vs. not spam) using Python. It uses CountVectorizer and TfidfVectorizer to convert text into numbers, and trains a Naive Bayes model to make predictions.

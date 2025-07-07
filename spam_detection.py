@@ -149,3 +149,47 @@ from collections import Counter
 sns.barplot(x=pd.DataFrame(Counter(ham_corpus).most_common(30))[0],y=pd.DataFrame(Counter(ham_corpus).most_common(30))[1])
 plt.xticks(rotation='vertical')
 plt.show()
+
+df['transformed_text'] = df['transformed_text'].apply(lambda x: " ".join(x))
+
+# -------------------------------------Vectorisation----------------------------------------------------------
+
+from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
+cv=CountVectorizer()
+tfidf=TfidfVectorizer()
+X=tfidf.fit_transform(df['transformed_text']).toarray()
+Y=df['target'].values
+
+# ------------------------------------Model buiding ----------------------------------------------------
+
+# here precision matters more so using tfidf
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,Y_train,Y_test=train_test_split(X,Y,test_size=0.2,random_state=2)
+from sklearn.naive_bayes import GaussianNB,MultinomialNB,BernoulliNB
+from sklearn.metrics import accuracy_score,confusion_matrix,precision_score
+gnb=GaussianNB()
+mnb=MultinomialNB()
+bnb=BernoulliNB()
+
+gnb.fit(X_train,Y_train)
+y_pred1=gnb.predict(X_test)
+print(accuracy_score(Y_test,y_pred1))
+print(confusion_matrix(Y_test,y_pred1))
+print(precision_score(Y_test,y_pred1))
+
+mnb.fit(X_train,Y_train)
+y_pred2=mnb.predict(X_test)
+print(accuracy_score(Y_test,y_pred2))
+print(confusion_matrix(Y_test,y_pred2))
+print(precision_score(Y_test,y_pred2))
+
+bnb.fit(X_train,Y_train)
+y_pred3=bnb.predict(X_test)
+print(accuracy_score(Y_test,y_pred3))
+print(confusion_matrix(Y_test,y_pred3))
+print(precision_score(Y_test,y_pred3))
+
+# mnb gave best result till now
+
+# ------------------------------Model Improvement------------------------------------------------------------
