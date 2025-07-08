@@ -1,44 +1,48 @@
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv('/content/spam.csv', encoding='ISO-8859-1')
+# Read the dataset
+df = pd.read_csv(
+    r'C:\Users\Riya Mahajan\OneDrive\Desktop\SMS_Spam_detection\spam.csv',
+    encoding='latin1'
+)
 
 
 # ---------------------------------------  Data preprocessing -------------------------------------------------------
 
-df.info()
-# drop extra columns
-df.drop(columns=['Unnamed: 2',	'Unnamed: 3',	'Unnamed: 4'],inplace=True)
-# rename columns
-df.rename(columns={'v1':'target','v2':'text'},inplace=True)
-# encode target
+# Drop extra columns
+df.drop(columns=['Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4'], inplace=True)
+
+# Rename columns
+df.rename(columns={'v1': 'target', 'v2': 'text'}, inplace=True)
+
+# Encode target labels
 from sklearn.preprocessing import LabelEncoder
-lb=LabelEncoder()
-df['target']=lb.fit_transform(df['target'])
-#check for null values
-df.isnull().sum()
-# check for duplicates
-df.duplicated().sum()
-# if yes
-df.drop_duplicates(keep='first',inplace=True)
-df.duplicated().sum()
+lb = LabelEncoder()
+df['target'] = lb.fit_transform(df['target'])
 
+# Check for and remove duplicates
+# print(df.isnull().sum())
+# print(df.duplicated().sum())
+df.drop_duplicates(keep='first', inplace=True)
 
-#---------------------------------------------- EDA ----------------------------------------------------------
+# ---------------------------------------------- EDA ----------------------------------------------------------
 
-df['target'].value_counts()
-#pie chart
-import matplotlib.pyplot as plt
-plt.pie(df['target'].value_counts(),labels=['ham','spam'],autopct="0.2f")
-plt.show()
+# import matplotlib.pyplot as plt
+# plt.pie(df['target'].value_counts(), labels=['ham', 'spam'], autopct="%.2f")
+# plt.show()
+
 import nltk
 nltk.download('punkt')
-# no of characters in string
-df['num_characters']=df['text'].apply(len)
-# no of words in string
+
+# Number of characters in each message
+df['num_characters'] = df['text'].apply(len)
+
+# Number of words
 from nltk.tokenize import wordpunct_tokenize
-df['text'] = df['text'].apply(lambda x: wordpunct_tokenize(x))
-# no of sentences ina a string
+df['num_words'] = df['text'].apply(lambda x: len(wordpunct_tokenize(x)))
+
+# Number of sentences
 import re
 def simple_sent_tokenize(text):
     sentences = re.split(r'[.!?]+', text)
@@ -46,150 +50,62 @@ def simple_sent_tokenize(text):
     return sentences
 
 df['num_sentences'] = df['text'].apply(lambda x: len(simple_sent_tokenize(x)))
-# describe
-df[['num_characters','num_words','num_sentences']].describe()
-df[df['target']==0][['num_characters','num_words','num_sentences']].describe()
-df[df['target']==1][['num_characters','num_words','num_sentences']].describe()
-# histogram
-import seaborn as sns
-sns.histplot(df[df['target']==0]['num_characters'],color='pink')
-sns.histplot(df[df['target']==1]['num_characters'])
-#relation btw columns
-sns.pairplot(df,hue='target')
-  
 
-# ------------------------------------------ text preprocessing -------------------------------------------------
+# Uncomment below to see histograms or pairplots
+# import seaborn as sns
+# sns.histplot(df[df['target']==0]['num_characters'], color='pink')
+# sns.histplot(df[df['target']==1]['num_characters'])
+# sns.pairplot(df, hue='target')
+
+# ------------------------------------------ Text preprocessing -------------------------------------------------
 
 nltk.download('stopwords')
 from nltk.corpus import stopwords
-stopwords.words('english')
 import string
-string.punctuation
 from nltk.stem.porter import PorterStemmer
-ps=PorterStemmer()
-#function
+
+stop_words = set(stopwords.words('english'))
+ps = PorterStemmer()
+
+# Function to preprocess text
 def transform_text(text):
-  text=text.lower()
-  text=nltk.wordpunct_tokenize(text)
-  y=[]
-  for i in text:
-    if i.isalnum():
-      y.append(i)
-  text=y[:]
-  y.clear()
-  for i in text:
-    if i not in stopwords.words('english') and i not in string.punctuation:
-      y.append(i)
-  text=y[:]
-  y.clear()
-  for i in text:
-    y.append(ps.stem(i))
-  return y
-df['transformed_text']=df['text'].apply(transform_text)
+    text = text.lower()
+    words = nltk.wordpunct_tokenize(text)
+    words = [w for w in words if w.isalnum()]
+    words = [w for w in words if w not in stop_words]
+    words = [ps.stem(w) for w in words]
+    return " ".join(words)
 
-
-# -------------------------------  word cloud for spam --------------------------------------
-
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-
-# 1. Make sure text is string
-spam_wc = df[df['target']==1]['transformed_text'].apply(lambda x: " ".join(x) if isinstance(x, list) else str(x))
-
-# 2. Join all text
-text = spam_wc.str.cat(sep=" ")
-
-# 3. Generate WordCloud
-wc = WordCloud(width=500, height=500, min_font_size=10, background_color='white').generate(text)
-
-# 4. Plot
-plt.figure(figsize=(4,4))
-plt.imshow(wc, interpolation='bilinear')
-plt.axis('off')
-plt.show()
-
-
-# -------------------------------- word cloud for ham -----------------------------------------
-
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-
-# 1. Make sure text is string
-spam_wc = df[df['target']==0]['transformed_text'].apply(lambda x: " ".join(x) if isinstance(x, list) else str(x))
-
-# 2. Join all text
-text = spam_wc.str.cat(sep=" ")
-
-# 3. Generate WordCloud
-wc = WordCloud(width=500, height=500, min_font_size=10, background_color='white').generate(text)
-
-# 4. Plot
-plt.figure(figsize=(4,4))
-plt.imshow(wc, interpolation='bilinear')
-plt.axis('off')
-plt.show()
-
-
-# ----------------------------------------- Top words --------------------------------------------
-
-spam_corpus = []
-for msg in df[df['target']==1]['transformed_text']:
-    spam_corpus.extend(msg)
-import seaborn as sns
-from collections import Counter
-sns.barplot(x=pd.DataFrame(Counter(spam_corpus).most_common(30))[0],y=pd.DataFrame(Counter(spam_corpus).most_common(30))[1])
-plt.xticks(rotation='vertical')
-plt.show()
-
-ham_corpus = []
-for msg in df[df['target']==0]['transformed_text']:
-    ham_corpus.extend(msg)
-import seaborn as sns
-from collections import Counter
-sns.barplot(x=pd.DataFrame(Counter(ham_corpus).most_common(30))[0],y=pd.DataFrame(Counter(ham_corpus).most_common(30))[1])
-plt.xticks(rotation='vertical')
-plt.show()
-
-df['transformed_text'] = df['transformed_text'].apply(lambda x: " ".join(x))
+df['transformed_text'] = df['text'].apply(transform_text)
 
 # -------------------------------------Vectorisation----------------------------------------------------------
 
-from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
-cv=CountVectorizer()
-tfidf=TfidfVectorizer()
-X=tfidf.fit_transform(df['transformed_text']).toarray()
-Y=df['target'].values
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+cv = CountVectorizer()
+tfidf = TfidfVectorizer(max_features=3000)
 
-# ------------------------------------Model buiding ----------------------------------------------------
+# Using TF-IDF because precision matters
+X = tfidf.fit_transform(df['transformed_text']).toarray()
+Y = df['target'].values
 
-# here precision matters more so using tfidf
+# ------------------------------------Model building ----------------------------------------------------
 
 from sklearn.model_selection import train_test_split
-X_train,X_test,Y_train,Y_test=train_test_split(X,Y,test_size=0.2,random_state=2)
-from sklearn.naive_bayes import GaussianNB,MultinomialNB,BernoulliNB
-from sklearn.metrics import accuracy_score,confusion_matrix,precision_score
-gnb=GaussianNB()
-mnb=MultinomialNB()
-bnb=BernoulliNB()
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=2)
 
-gnb.fit(X_train,Y_train)
-y_pred1=gnb.predict(X_test)
-print(accuracy_score(Y_test,y_pred1))
-print(confusion_matrix(Y_test,y_pred1))
-print(precision_score(Y_test,y_pred1))
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_score
 
-mnb.fit(X_train,Y_train)
-y_pred2=mnb.predict(X_test)
-print(accuracy_score(Y_test,y_pred2))
-print(confusion_matrix(Y_test,y_pred2))
-print(precision_score(Y_test,y_pred2))
+mnb = MultinomialNB()
+mnb.fit(X_train, Y_train)
 
-bnb.fit(X_train,Y_train)
-y_pred3=bnb.predict(X_test)
-print(accuracy_score(Y_test,y_pred3))
-print(confusion_matrix(Y_test,y_pred3))
-print(precision_score(Y_test,y_pred3))
+y_pred = mnb.predict(X_test)
 
-# mnb gave best result till now
+print("Accuracy:", accuracy_score(Y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(Y_test, y_pred))
+print("Precision:", precision_score(Y_test, y_pred))
 
-# ------------------------------Model Improvement------------------------------------------------------------
+# ------------------------------Notes------------------------------------------------------------
+# GaussianNB & BernoulliNB gave worse results than MultinomialNB.
+# TF-IDF with MultinomialNB worked best here.
+# Other improvements possible: tune vectorizer params, try other models.
