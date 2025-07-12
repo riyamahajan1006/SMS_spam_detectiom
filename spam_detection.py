@@ -188,3 +188,6 @@ print("Precision:", precision_score(Y_test, y_pred))
 # - Adding more features (like num_characters, num_words — although in tests they didn’t improve much)
 # - Using MinMaxScaler did not help here.
 
+import pickle
+pickle.dump(tfidf, open('tfidf_vectorizer.pkl', 'wb'))
+pickle.dump(mnb, open('model.pkl', 'wb'))
