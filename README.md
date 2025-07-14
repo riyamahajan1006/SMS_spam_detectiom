@@ -1,1 +1,1 @@
-This is a simple Machine Learning project that classifies text data (like spam vs. not spam) using Python. It uses CountVectorizer and TfidfVectorizer to convert text into numbers, and trains a Naive Bayes model to make predictions.
+This project is a basic text classification system built with Python. It processes messages using CountVectorizer and TfidfVectorizer to transform text into numerical vectors. A Naive Bayes algorithm is then trained on these vectors to classify incoming messages as either spam or ham (not spam).
