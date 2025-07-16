@@ -1,25 +1,11 @@
 import streamlit as st
 import pickle
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem.porter import PorterStemmer
-
-nltk.download('punkt')
-nltk.download('stopwords')
-
-ps = PorterStemmer()
-stop_words = set(stopwords.words('english'))
+import cloudpickle
 
 tfidf = pickle.load(open('vectorizer.pkl', 'rb'))
 model = pickle.load(open('model.pkl', 'rb'))
-
-def transform_text(text):
-    text = text.lower()
-    words = nltk.word_tokenize(text)
-    words = [w for w in words if w.isalnum()]
-    words = [w for w in words if w not in stop_words]
-    words = [ps.stem(w) for w in words]
-    return " ".join(words)
+with open('transform.pkl', 'rb') as f_in:
+    transform_text = cloudpickle.load(f_in)
 
 st.title("📩 SMS Spam Classifier")
 st.subheader("Enter a message below to check if it's Spam or Not:")
